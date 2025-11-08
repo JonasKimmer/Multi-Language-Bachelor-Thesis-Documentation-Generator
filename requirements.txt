@@ -6,6 +6,7 @@ anthropic>=0.39.0
 GitPython>=3.1.43
 PyYAML>=6.0.1
 pygments>=2.17.2
+requests>=2.31.0
 
 # Optional dependencies for enhanced functionality
 # pandoc - for PDF export (requires system installation)

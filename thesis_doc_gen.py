@@ -18,6 +18,7 @@ from thesis_doc_gen.analyzers.factory import AnalyzerFactory
 from thesis_doc_gen.utils.git_parser import GitParser
 from thesis_doc_gen.utils.file_scanner import FileScanner
 from thesis_doc_gen.utils.claude_client import ClaudeClient
+from thesis_doc_gen.utils.llama_client import LlamaClient, LlamaOllamaClient
 from thesis_doc_gen.utils.diagram_generator import DiagramGenerator
 from thesis_doc_gen.chapter_generator import ChapterGenerator
 
@@ -202,7 +203,9 @@ def generate_documentation(
     analysis_results: Dict[str, Any],
     config: Dict[str, Any],
     output_dir: Path,
-    dry_run: bool = False
+    dry_run: bool = False,
+    llm_backend: str = "claude",
+    llm_model: Optional[str] = None
 ) -> None:
     """
     Generate documentation.
@@ -213,6 +216,8 @@ def generate_documentation(
         config: Configuration
         output_dir: Output directory
         dry_run: If True, don't actually generate (just show what would be done)
+        llm_backend: LLM backend to use ('claude', 'llama-ollama', 'llama-hf')
+        llm_model: Optional model name override
     """
     if dry_run:
         print("\n=== DRY RUN MODE ===")
@@ -236,11 +241,23 @@ def generate_documentation(
     )
 
     # Step 6: Generate documentation chapters
-    print_progress(6, 7, "Generating documentation chapters (this may take a few minutes)")
+    print_progress(6, 7, f"Generating documentation chapters with {llm_backend} (this may take a few minutes)")
 
     try:
-        claude_client = ClaudeClient()
-        chapter_gen = ChapterGenerator(claude_client, config)
+        # Create LLM client based on backend
+        if llm_backend == "claude":
+            llm_client = ClaudeClient(model=llm_model) if llm_model else ClaudeClient()
+        elif llm_backend == "llama-ollama":
+            llm_client = LlamaOllamaClient(model=llm_model or "llama3.1:8b")
+        elif llm_backend == "llama-hf":
+            llm_client = LlamaClient(
+                backend="huggingface",
+                model=llm_model or "meta-llama/Meta-Llama-3.1-8B-Instruct"
+            )
+        else:
+            raise ValueError(f"Unknown LLM backend: {llm_backend}")
+
+        chapter_gen = ChapterGenerator(llm_client, config)
 
         def chapter_progress(current, total, message):
             print(f"  [{current}/{total}] {message}...")
@@ -257,7 +274,13 @@ def generate_documentation(
 
     except ValueError as e:
         print(f"\nError: {e}")
-        print("Please set ANTHROPIC_API_KEY environment variable")
+        if "ANTHROPIC_API_KEY" in str(e):
+            print("Please set ANTHROPIC_API_KEY environment variable or use --llm-backend llama-ollama")
+        elif "HUGGINGFACE_API_KEY" in str(e):
+            print("Please set HUGGINGFACE_API_KEY environment variable")
+        elif "Ollama" in str(e) or "ollama" in str(e):
+            print("Please make sure Ollama is running: 'ollama serve'")
+            print("And install Llama 3.1 8B: 'ollama pull llama3.1:8b'")
         sys.exit(1)
     except Exception as e:
         print(f"\nError generating documentation: {e}")
@@ -291,9 +314,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Mit Claude (Standard)
   %(prog)s --repo-path ./my-project --output ./docs
+
+  # Mit Llama 3.1 8B via Ollama (lokal, kostenlos)
+  %(prog)s --repo-path ./my-project --output ./docs --llm-backend llama-ollama
+
+  # Mit eigener Konfiguration
   %(prog)s --repo-path ~/projects/app --config config.yaml --verbose
-  %(prog)s --repo-path . --output ./thesis-docs --dry-run
         """
     )
 
@@ -338,6 +366,20 @@ Examples:
     )
 
     parser.add_argument(
+        '--llm-backend',
+        type=str,
+        choices=['claude', 'llama-ollama', 'llama-hf'],
+        default='claude',
+        help='LLM backend to use (default: claude). llama-ollama = local Ollama, llama-hf = HuggingFace API'
+    )
+
+    parser.add_argument(
+        '--llm-model',
+        type=str,
+        help='Override default model for selected backend'
+    )
+
+    parser.add_argument(
         '--version',
         action='version',
         version='%(prog)s 1.0.0'
@@ -372,6 +414,9 @@ Examples:
     print(f"Repository: {args.repo_path.absolute()}")
     print(f"Output: {args.output.absolute()}")
     print(f"Config: {args.config}")
+    print(f"LLM Backend: {args.llm_backend}")
+    if args.llm_model:
+        print(f"LLM Model: {args.llm_model}")
     print("=" * 60)
     print()
 
@@ -385,7 +430,9 @@ Examples:
             analysis_results,
             config,
             args.output,
-            dry_run=args.dry_run
+            dry_run=args.dry_run,
+            llm_backend=args.llm_backend,
+            llm_model=args.llm_model
         )
 
     except KeyboardInterrupt:

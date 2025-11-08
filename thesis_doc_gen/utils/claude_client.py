@@ -6,10 +6,12 @@ import logging
 from typing import Optional, Dict, Any
 import anthropic
 
+from .base_llm_client import BaseLLMClient
+
 logger = logging.getLogger(__name__)
 
 
-class ClaudeClient:
+class ClaudeClient(BaseLLMClient):
     """Client for interacting with Claude API."""
 
     def __init__(self, api_key: Optional[str] = None, model: str = "claude-sonnet-4-20250514"):
@@ -20,11 +22,12 @@ class ClaudeClient:
             api_key: Anthropic API key (defaults to environment variable)
             model: Claude model to use
         """
+        super().__init__(model)
+
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY not found in environment or provided")
 
-        self.model = model
         self.client = anthropic.Anthropic(api_key=self.api_key)
         self.logger = logging.getLogger(__name__)
 
@@ -108,112 +111,6 @@ class ClaudeClient:
 
         return ""
 
-    def generate_chapter(
-        self,
-        chapter_name: str,
-        context: Dict[str, Any],
-        template: str,
-        language: str = "de",
-        target_words: int = 600
-    ) -> str:
-        """
-        Generate a documentation chapter.
-
-        Args:
-            chapter_name: Name of the chapter
-            context: Context data for generation
-            template: Template with instructions
-            language: Language for documentation (de or en)
-            target_words: Target word count
-
-        Returns:
-            Generated chapter content in Markdown
-        """
-        system_prompt = f"""Du bist ein Experte für technische Dokumentation wissenschaftlicher Bachelorarbeiten.
-
-Anforderungen:
-- Schreibe auf Bachelor-Niveau (wissenschaftlich präzise, aber verständlich)
-- Verwende korrekte Fachbegriffe
-- Begründe Aussagen objektiv
-- Zielsprache: {language.upper()}
-- Zielumfang: ca. {target_words} Wörter
-- Format: Markdown
-
-Stil:
-- Sachlich und objektiv
-- Präzise und konkret
-- Mit Begründungen (nicht nur Behauptungen)
-- Zeige technische Tiefe"""
-
-        prompt = f"""Erstelle das Kapitel: {chapter_name}
-
-{template}
-
-Verfügbare Kontextdaten:
-{self._format_context(context)}
-
-Anforderungen:
-- Schreibe wissenschaftlich fundiert auf Bachelor-Niveau
-- Erkläre nicht nur WAS gemacht wurde, sondern auch WARUM
-- Bei Entscheidungen: Nenne Alternativen und Begründung
-- Füge konkrete Code-Beispiele ein wo sinnvoll
-- Verwende Markdown-Formatierung
-- Zielumfang: {target_words} Wörter
-
-Generiere jetzt das vollständige Kapitel:"""
-
-        return self.generate_content(
-            prompt=prompt,
-            system_prompt=system_prompt,
-            max_tokens=16000,
-            temperature=0.7
-        )
-
-    def _format_context(self, context: Dict[str, Any]) -> str:
-        """Format context data for the prompt."""
-        lines = []
-
-        for key, value in context.items():
-            if isinstance(value, dict):
-                lines.append(f"\n## {key}:")
-                for sub_key, sub_value in value.items():
-                    lines.append(f"  - {sub_key}: {sub_value}")
-            elif isinstance(value, list):
-                lines.append(f"\n## {key}:")
-                for item in value[:10]:  # Limit to first 10 items
-                    lines.append(f"  - {item}")
-                if len(value) > 10:
-                    lines.append(f"  ... and {len(value) - 10} more")
-            else:
-                lines.append(f"- {key}: {value}")
-
-        return "\n".join(lines)
-
-    def filter_sensitive_data(self, content: str) -> str:
-        """
-        Filter sensitive data from content.
-
-        Args:
-            content: Content to filter
-
-        Returns:
-            Filtered content with sensitive data replaced
-        """
-        import re
-
-        # Common patterns for sensitive data
-        patterns = {
-            "api_key": r'(?i)(api[_-]?key|apikey)[\s:=]+["\']?([a-zA-Z0-9_\-]+)["\']?',
-            "password": r'(?i)(password|passwd|pwd)[\s:=]+["\']?([^\s"\']+)["\']?',
-            "token": r'(?i)(token|auth)[\s:=]+["\']?([a-zA-Z0-9_\-\.]+)["\']?',
-            "secret": r'(?i)(secret)[\s:=]+["\']?([a-zA-Z0-9_\-]+)["\']?',
-        }
-
-        filtered = content
-        for pattern_name, pattern in patterns.items():
-            filtered = re.sub(pattern, r'\1: ***filtered***', filtered)
-
-        return filtered
 
     def estimate_tokens(self, text: str) -> int:
         """
