@@ -1,0 +1,16 @@
+{
+  "total_files": 3,
+  "total_directories": 0,
+  "project_types": [
+    "Python"
+  ],
+  "size_category": "small",
+  "config_files": {
+    "build": [],
+    "test": [],
+    "lint": [],
+    "ci_cd": [],
+    "docker": [],
+    "other": []
+  }
+}

@@ -1,0 +1,21 @@
+```mermaid
+classDiagram
+    class ChatbotEngine {
+        -_load_intents()
+        +process_message()
+        -_detect_intent()
+        -_generate_response()
+    }
+    class ConversationManager {
+        +create_session()
+        +add_message()
+    }
+    class ChatDatabase {
+        -_init_database()
+        +save_conversation()
+        +save_message()
+        +get_conversation_history()
+        +save_feedback()
+        +close()
+    }
+```

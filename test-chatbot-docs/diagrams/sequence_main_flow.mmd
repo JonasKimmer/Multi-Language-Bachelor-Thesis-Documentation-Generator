@@ -1,0 +1,13 @@
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant Database
+    User->>Frontend: Request
+    Frontend->>Backend: API Call
+    Backend->>Database: Query
+    Database-->>Backend: Data
+    Backend-->>Frontend: Response
+    Frontend-->>User: Display
+```

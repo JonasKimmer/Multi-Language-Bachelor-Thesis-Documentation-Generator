@@ -1,0 +1,36 @@
+project:
+  name: "Chatbot Rüsselsheim"
+  author: "Jonas Kimmer"
+  supervisor: "Prof. Dr. [Name]"
+  university: "TH Köln"
+  year: 2025
+  description: "Ein intelligenter Chatbot für Bürgerservices der Stadt Rüsselsheim"
+  goals: "Automatisierung von häufigen Bürgeranfragen und Verbesserung der digitalen Services"
+
+analysis:
+  languages: auto
+  focus_areas:
+    - architecture
+    - design_decisions
+    - methodology
+    - user_interaction
+  exclude_paths:
+    - node_modules
+    - venv
+    - __pycache__
+    - .git
+    - dist
+    - build
+    - .pytest_cache
+  max_file_size_kb: 500
+
+output:
+  format:
+    - markdown
+  language: de
+  chapter_length: 500
+
+documentation:
+  style: academic
+  include_code_examples: true
+  max_code_lines_per_example: 25
