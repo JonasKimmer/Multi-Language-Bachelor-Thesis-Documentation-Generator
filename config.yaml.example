@@ -1,0 +1,64 @@
+# Configuration file for Multi-Language Bachelor Thesis Documentation Generator
+#
+# Copy this file to config.yaml and adjust the values to match your project
+
+project:
+  name: "Mein Projekt Name"
+  author: "Jonas [Nachname]"
+  supervisor: "Prof. Dr. [Name]"
+  university: "[Hochschule]"
+  year: 2025
+
+analysis:
+  # Languages to analyze: 'auto' for auto-detection, or specify explicitly
+  # Options: auto, python, javascript, java, sql
+  languages: auto
+
+  # Which aspects of the project to emphasize in documentation
+  focus_areas:
+    - architecture
+    - design_decisions
+    - methodology
+
+  # Paths to exclude from analysis
+  exclude_paths:
+    - node_modules/
+    - venv/
+    - env/
+    - .venv/
+    - __pycache__/
+    - .git/
+    - dist/
+    - build/
+    - .next/
+    - .cache/
+    - coverage/
+    - .pytest_cache/
+    - target/
+    - bin/
+    - obj/
+
+  # Maximum file size to analyze (in KB)
+  # Files larger than this will be skipped
+  max_file_size_kb: 500
+
+output:
+  # Output formats: markdown, pdf (pdf requires pandoc)
+  format:
+    - markdown
+
+  # Documentation language: de (German) or en (English)
+  language: de
+
+  # Target word count per chapter
+  chapter_length: 600
+
+documentation:
+  # Writing style: academic (wissenschaftlich) or technical
+  style: academic
+
+  # Include code examples in documentation
+  include_code_examples: true
+
+  # Maximum lines per code example
+  max_code_lines_per_example: 30

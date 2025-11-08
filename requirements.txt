@@ -1,0 +1,11 @@
+# Multi-Language Bachelor Thesis Documentation Generator
+# Requirements
+
+# Core dependencies
+anthropic>=0.39.0
+GitPython>=3.1.43
+PyYAML>=6.0.1
+pygments>=2.17.2
+
+# Optional dependencies for enhanced functionality
+# pandoc - for PDF export (requires system installation)
