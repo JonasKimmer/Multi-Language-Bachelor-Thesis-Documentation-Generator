@@ -132,13 +132,22 @@ def analyze_repository(repo_path: Path, config: Dict[str, Any]) -> Dict[str, Any
         stats = git_parser.get_commit_stats()
         phases = git_parser.analyze_development_phases(commits)
 
+        # Include detailed commit history (all commits, but truncate long messages)
+        commits_detailed = []
+        for commit in commits[:100]:  # Include up to 100 most recent commits
+            commit_dict = commit.to_dict()
+            # Truncate very long commit messages to avoid huge context
+            if commit_dict.get('message') and len(commit_dict['message']) > 300:
+                commit_dict['message'] = commit_dict['message'][:300] + '...'
+            commits_detailed.append(commit_dict)
+
         context['git_history'] = {
             'total_commits': len(commits),
             'contributors': stats.get('contributors', []),
             'first_commit_date': stats.get('first_commit_date'),
             'last_commit_date': stats.get('last_commit_date'),
             'development_phases': phases,
-            'recent_commits': [c.to_dict() for c in commits[:10]]
+            'commits': commits_detailed  # Changed from 'recent_commits' and increased from 10 to 100
         }
 
         logger.info(f"Extracted {len(commits)} commits")
@@ -165,12 +174,37 @@ def analyze_repository(repo_path: Path, config: Dict[str, Any]) -> Dict[str, Any
 
     for language, result in analysis_results.items():
         result_dict = result.to_dict()
+
+        # Include detailed class and function information for LLM
+        classes_detailed = []
+        for cls in result.classes[:30]:  # Limit to top 30 classes to avoid huge context
+            classes_detailed.append({
+                'name': cls.get('name'),
+                'file': cls.get('file', ''),
+                'methods': [m.get('name') for m in cls.get('methods', [])[:10]],
+                'bases': cls.get('bases', []),
+                'docstring': cls.get('docstring', '')[:200] if cls.get('docstring') else None
+            })
+
+        functions_detailed = []
+        for func in result.functions[:50]:  # Limit to top 50 functions
+            functions_detailed.append({
+                'name': func.get('name'),
+                'file': func.get('file', ''),
+                'args': func.get('args', []),
+                'docstring': func.get('docstring', '')[:200] if func.get('docstring') else None,
+                'is_async': func.get('is_async', False)
+            })
+
         context['analysis'][language] = {
             'files_analyzed': len(result.files_analyzed),
             'total_lines': result.total_lines,
+            'classes': classes_detailed,
+            'functions': functions_detailed,
             'classes_count': len(result.classes),
             'functions_count': len(result.functions),
-            'dependencies': result.dependencies[:20],  # Limit to top 20
+            'dependencies': result.dependencies[:30],
+            'frameworks': getattr(result, 'frameworks', []) if hasattr(result, 'frameworks') else []
         }
         all_dependencies.extend(result.dependencies)
 

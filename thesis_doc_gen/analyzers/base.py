@@ -19,6 +19,7 @@ class AnalysisResult:
         self.functions: List[Dict[str, Any]] = []
         self.imports: List[str] = []
         self.dependencies: List[str] = []
+        self.frameworks: List[str] = []
         self.complexity_metrics: Dict[str, Any] = {}
         self.design_patterns: List[str] = []
         self.comments_ratio: float = 0.0
@@ -34,6 +35,7 @@ class AnalysisResult:
             "functions": self.functions,
             "imports": self.imports,
             "dependencies": self.dependencies,
+            "frameworks": self.frameworks,
             "complexity_metrics": self.complexity_metrics,
             "design_patterns": self.design_patterns,
             "comments_ratio": self.comments_ratio,
@@ -137,6 +139,10 @@ class BaseAnalyzer(ABC):
         if result.files_analyzed:
             result.dependencies = list(set(result.imports))
             result.comments_ratio = self._calculate_comments_ratio(result)
+
+            # Detect frameworks (if analyzer implements it)
+            if hasattr(self, 'detect_frameworks'):
+                result.frameworks = self.detect_frameworks(result.imports)
 
         return result
 

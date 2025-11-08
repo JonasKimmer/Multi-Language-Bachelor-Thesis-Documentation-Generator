@@ -43,7 +43,13 @@ class PythonAnalyzer(BaseAnalyzer):
             # Parse AST
             try:
                 tree = ast.parse(content, filename=str(file_path))
-                result.update(self._analyze_ast(tree))
+                ast_result = self._analyze_ast(tree)
+                # Add file path to all classes and functions
+                for cls in ast_result.get('classes', []):
+                    cls['file'] = str(file_path)
+                for func in ast_result.get('functions', []):
+                    func['file'] = str(file_path)
+                result.update(ast_result)
             except SyntaxError as e:
                 self.logger.warning(f"Syntax error in {file_path}: {e}")
 
